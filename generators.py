@@ -13,10 +13,12 @@ class GeneratorBase:
 
 class StarCoder(GeneratorBase):
     def __init__(self, pretrained: str, device: str = None, device_map: str = None):
-        self.pretrained: str = pretrained
-        self.pipe: Pipeline = pipeline(
-            "text-generation", model=pretrained, torch_dtype=torch.bfloat16, device=device, device_map=device_map)
-        self.generation_config = GenerationConfig.from_pretrained(pretrained)
+        self.pretrained: str = "/mnt/wd500/hf-starcoder"
+        tokenizer = AutoTokenizer.from_pretrained(self.pretrained)
+        # for fp16 replace with  `load_in_8bit=True` with   `torch_dtype=torch.float16`
+        model = AutoModelForCausalLM.from_pretrained(self.pretrained, device_map="auto", load_in_8bit=True)
+        self.pipe: Pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer)
+        self.generation_config = GenerationConfig.from_pretrained(self.pretrained)
         self.generation_config.pad_token_id = self.pipe.tokenizer.eos_token_id
 
     def generate(self, query: str, parameters: dict) -> str:
